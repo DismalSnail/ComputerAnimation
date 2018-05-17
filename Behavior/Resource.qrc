@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>images/Open.png</file>
+        <file>images/Save.png</file>
+        <file>images/Pause.png</file>
+        <file>images/Play.png</file>
+        <file>images/PlayBack.png</file>
+        <file>images/StepForward.png</file>
+        <file>images/StepBack.png</file>
+        <file>images/IK.png</file>
+        <file>images/Line.png</file>
+        <file>images/Blend.png</file>
+        <file>images/skeleton.png</file>
+        <file>images/Correct.png</file>
+        <file>images/Camera.png</file>
+        <file>images/Icon.png</file>
+        <file>images/Background.png</file>
+        <file>images/Control.png</file>
+    </qresource>
+</RCC>
