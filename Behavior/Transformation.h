@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////////
 // Transformation.h -- Header file for useful Classes about 3D transformations
 //
-// Liming Zhao
+// LM Z
 // 11/02/2007
-// University of Pennsylvania
+// UPenn
 
 /****************************************************************
 *																*

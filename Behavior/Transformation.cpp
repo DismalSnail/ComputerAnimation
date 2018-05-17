@@ -3,8 +3,8 @@
 //////////////////////////////////////////////////////////////////////////
 // Transformation.cpp -- Source file for useful Classes about 3D transformations
 //
-// T H
-// 10/06/2012
+// LM Z
+// 11/02/2007
 // UPenn
 
 #include "Transformation.h"
@@ -1344,9 +1344,6 @@ Quaternion Quaternion::Log(const Quaternion& q)
 void Quaternion::Zero()
 {
         n[VW] = n[VX] = n[VY] = n[VZ] = 0.0f;
-		//Quaternion d;
-		//Quaternion c;
-		//c.operator *=d;
 }
 
 Quaternion Quaternion::Slerp(float t, const Quaternion& q0, const Quaternion& q1)
