@@ -851,6 +851,8 @@ void Joint::UpdateTransformation(bool bRecursive)
 {
 	// Replace the following code with your code
 	m_global.Identity();
+	if (m_pParent == NULL);
+	else m_global= m_pParent->GetGlobalTransform()*GetLocalTransform();
 	if (bRecursive)
 	{
 		vector<Joint*>::const_iterator iter;
@@ -870,6 +872,8 @@ void Joint::UpdateTransformation(bool bRecursive)
 void Skeleton::UpdateFK(Joint* pRoot)
 {
 	// Add your code here
+	if (pRoot==NULL)m_pRoot->UpdateTransformation(true);
+	else pRoot->UpdateTransformation(true);
 }
 
 //////////////////////////////////////////////////////////////////////////
