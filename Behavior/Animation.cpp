@@ -851,7 +851,7 @@ void Joint::UpdateTransformation(bool bRecursive)
 {
 	// Replace the following code with your code
 	m_global.Identity();
-	if (m_pParent == NULL);
+	if (m_pParent == NULL) m_global=GetLocalTransform();
 	else m_global= m_pParent->GetGlobalTransform()*GetLocalTransform();
 	if (bRecursive)
 	{
@@ -938,11 +938,21 @@ void Skeleton::SolveIK(void)
 void Frame::Cubic(const Frame& frame0, const Frame& frame1, const Frame& frame2, const Frame& frame3, Frame& targetFrame, float fPerc)
 {
 	// Replace the following code with your code	
-	vec3 angles;
-	targetFrame.m_rootTranslation = vec3(0.0f, 0.0f, 0.0f);	// You need to implement the root translation interpolation
+	targetFrame.m_rootTranslation = frame1.m_rootTranslation * (1.0f - fPerc) + frame2.m_rootTranslation * fPerc;
 	for (unsigned int i = 0; i < frame0.m_jointCount; i++)
 	{
-		angles = vec3(0.0f, 0.0f, 0.0f);
+		targetFrame.m_rotationData[i].FromQuaternion(targetFrame.m_quaternionData[i]);
+		const mat3& rot0 = frame0.GetJointRotation(i);
+		const mat3& rot1 = frame1.GetJointRotation(i);
+		const mat3& rot2 = frame2.GetJointRotation(i);
+		const mat3& rot3 = frame3.GetJointRotation(i);
+		vec3 angles0, angles1, angles2, angles3, angles;
+		rot0.ToEulerAnglesZXY(angles0);
+		rot1.ToEulerAnglesZXY(angles1);
+		rot2.ToEulerAnglesZXY(angles2);
+		rot3.ToEulerAnglesZXY(angles3);
+		//angles = CubicVec3(angles0, angles1, angles2, angles3, fPerc);
+		angles = angles1 * (1.0f - fPerc) + angles2 * (fPerc);
 		targetFrame.m_rotationData[i].FromEulerAnglesZXY(angles);
 		targetFrame.m_quaternionData[i].FromRotation(targetFrame.m_rotationData[i]);
 	}
@@ -963,6 +973,8 @@ void Frame::Slerp(const Frame& frame0, const Frame& frame1, Frame& targetFrame, 
 	{
 		// Slerp the joint rotations
 		// Make sure of the data consistency
+		targetFrame.m_quaternionData[i] = Quaternion::Slerp(fPerc, frame0.m_quaternionData[i], frame1.m_quaternionData[i]);
+		targetFrame.m_rotationData[i].FromQuaternion(targetFrame.m_quaternionData[i]);
 	}
 }
 
@@ -973,6 +985,10 @@ void Frame::Slerp(const Frame& frame0, const Frame& frame1, Frame& targetFrame, 
 void Frame::IntermediateFrame(const Frame& frame0, const Frame& frame1, const Frame& frame2, Frame& targetFrame)
 {
 	// Add your code here
+	for (unsigned int i = 0; i < frame0.m_jointCount; i++)
+	{
+		targetFrame.m_quaternionData[i] = Quaternion::Intermediate(frame0.m_quaternionData[i], frame1.m_quaternionData[i], frame2.m_quaternionData[i]);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -988,6 +1004,13 @@ void Frame::Squad(const Frame& frame0, const Frame& s0,const Frame& s1, const Fr
 				  Frame& targetFrame, float fPerc)
 {
 	// Add your code here
+	targetFrame.m_rootTranslation = frame0.m_rootTranslation * (1.0f - fPerc) + frame1.m_rootTranslation * fPerc;
+	for (unsigned int i = 0; i < frame0.m_jointCount; i++)
+	{
+		targetFrame.m_quaternionData[i] = Quaternion::Squad(fPerc, frame0.m_quaternionData[i], s0.m_quaternionData[i],
+			s1.m_quaternionData[i], frame1.m_quaternionData[i]);
+		targetFrame.m_rotationData[i].FromQuaternion(targetFrame.m_quaternionData[i]);
+	}
 }
 
 //========================================================================
