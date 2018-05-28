@@ -968,11 +968,9 @@ void Frame::Cubic(const Frame& frame0, const Frame& frame1, const Frame& frame2,
 void Frame::Slerp(const Frame& frame0, const Frame& frame1, Frame& targetFrame, float fPerc)
 {
 	// Replace the following code with your code
-	targetFrame.m_rootTranslation = vec3(0.0f, 0.0f, 0.0f); // You need to implement the root translation interpolation
+	targetFrame.m_rootTranslation = frame0.m_rootTranslation * (1.0f - fPerc) + frame1.m_rootTranslation * fPerc;
 	for (unsigned int i = 0; i < frame0.m_jointCount; i++)
 	{
-		// Slerp the joint rotations
-		// Make sure of the data consistency
 		targetFrame.m_quaternionData[i] = Quaternion::Slerp(fPerc, frame0.m_quaternionData[i], frame1.m_quaternionData[i]);
 		targetFrame.m_rotationData[i].FromQuaternion(targetFrame.m_quaternionData[i]);
 	}
@@ -1047,35 +1045,50 @@ void Player::Blend( const unsigned int& startFrame, const unsigned int& endFrame
 	vec3 dir1;
 	vec3 dir2;
 
-	dir1 = m_motion1.m_keyFrames[startFrame]->GetRootTranslation() - m_motion1.m_keyFrames[startFrame-1]->GetRootTranslation();
-	dir2 = m_motion2.m_keyFrames[endFrame+1]->GetRootTranslation() - m_motion2.m_keyFrames[endFrame]->GetRootTranslation();
+	dir1 = m_motion1.m_keyFrames[startFrame]->GetRootTranslation() - m_motion1.m_keyFrames[startFrame - 1]->GetRootTranslation();
+	dir2 = m_motion2.m_keyFrames[endFrame]->GetRootTranslation() - m_motion2.m_keyFrames[endFrame - 1]->GetRootTranslation() ;
 	vec3 translate = m_motion1.m_keyFrames[startFrame]->GetRootTranslation();
 
 	//make conditional judgement 
+	for (float i = 0; i <= 1; i += (float)1 / (interpFrame + 1))
+	{
+		translate += dir1 + i * (dir2 - dir1);
+	}
+
+	// Computing the factor to estimate translation and rotation																												
+	// for motion3
 	dir1.Normalize();
 	dir2.Normalize();
-
 	float seta = acos(dir1*dir2);
-	mat3 setaRot = mat3::Rotation3DRad(axisY, seta).Transpose();// Computing the factor to estimate translation and rotation																												// for motion3
+	mat3 setaRot = mat3::Rotation3DRad(axisY, seta);
 
 	Transform convert;
-	convert.m_rotation = setaRot*m_motion2.GetFrameAt(endFrame)->GetJointRotation(0);
-	convert.m_translation = convert.m_rotation*translate;
+	convert.m_rotation = setaRot;
+	convert.m_translation = m_motion2.GetFrameAt(endFrame)->GetRootTranslation();
+
+	Transform start;
+	start.m_rotation = m_motion1.GetFrameAt(endFrame)->GetJointRotation(0);
+	start.m_translation = translate;
+
+	Transform dur;
+	dur = start * convert.Inverse();																	
+
 	Transform t;
 	Transform tOld;
 	Transform tNew;
-	t.m_rotation = convert.m_rotation;
-	t.m_translation = convert.m_translation;
+	t.m_rotation = dur.m_rotation;
+	t.m_translation = dur.m_translation;
+
 	// m_motion3[startFrame + interpFrame + 1, ..., totalFrame] = m_motion2[endFrame, ..., frameCount] with proper root translation and rotation
 	// TODO: Start your code here...  
 
 	for (unsigned int i = startFrame + interpFrame + 1; i < totalFrame; i++)
 	{
 
-		m_motion3.m_keyFrames[i]->Clone(*(m_motion2.m_keyFrames[endFrame + i - startFrame- interpFrame -1]));
+		m_motion3.m_keyFrames[i]->Clone(*(m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]));
 
-		tOld.m_translation = m_motion2.m_keyFrames[endFrame + i - startFrame- interpFrame -1]->GetRootTranslation();
-		tOld.m_rotation = m_motion2.m_keyFrames[endFrame + i - startFrame- interpFrame -1]->GetJointRotation(0);
+		tOld.m_translation = m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]->GetRootTranslation();
+		tOld.m_rotation = m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]->GetJointRotation(0);
 
 		tNew = t * tOld;
 		m_motion3.m_keyFrames[i]->SetRootTranslation(vec3(tNew.m_translation[0], tOld.m_translation[1], tNew.m_translation[2])); // Restricting translation in y axis
@@ -1108,6 +1121,8 @@ void Player::Blend( const unsigned int& startFrame, const unsigned int& endFrame
 			pFrame->Slerp(*m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
 			break;
 		case eSQUAD:
+			Frame::IntermediateFrame(*m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 1), s0);
+			Frame::IntermediateFrame(*m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 1), *m_motion3.GetFrameAt(startFrame + interpFrame + 2), s1);
 			pFrame->Squad(*m_motion3.GetFrameAt(startFrame), s0, s1, *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
 			// TODO: SQUAD
 			break;
