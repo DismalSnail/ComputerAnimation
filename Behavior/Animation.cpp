@@ -851,7 +851,7 @@ void Joint::UpdateTransformation(bool bRecursive)
 {
 	// Replace the following code with your code
 	m_global.Identity();
-	if (m_pParent == NULL) m_global=GetLocalTransform();
+	if (m_pParent == NULL) m_global= GetLocalTransform();
 	else m_global= m_pParent->GetGlobalTransform()*GetLocalTransform();
 	if (bRecursive)
 	{
@@ -1022,54 +1022,95 @@ void Frame::Squad(const Frame& frame0, const Frame& s0,const Frame& s1, const Fr
 // Write some member functions if they help you to solve the problem
 void Player::Blend( const unsigned int& startFrame, const unsigned int& endFrame, const unsigned int& interpFrame, const unsigned int& type )
 {
-    // Compute total frame number for the target motion
-    unsigned int totalFrame = 1; // replace with your code
+	// Compute total frame number for the target motion
+	//unsigned int totalFrame = 1; // replace with your code
+	unsigned int totalFrame = startFrame + interpFrame + (m_motion2.GetFrameCount() - endFrame) + 1;
 
-    // Release and allocation space for result motion m_motion3
-    m_motion3.FreeSpace();
-    m_motion3.m_jointCount = m_skeleton.GetJointCount();
-    m_motion3.m_frameCount = totalFrame;
-    m_motion3.AllocateSpace();
+	// Release and allocation space for result motion m_motion3
+	m_motion3.FreeSpace();
+	m_motion3.m_jointCount = m_skeleton.GetJointCount();
+	m_motion3.m_frameCount = totalFrame;
+	m_motion3.AllocateSpace();
 
-    // Copy frames from m_motion1 to m_motion3
-    // m_motion3[0, ..., startFrame] = m_motion1[0, ..., startFrame]
-    for (unsigned int i = 0; i < startFrame + 2; i++)
-    {
-        m_motion3.m_keyFrames[i]->Clone(*(m_motion1.m_keyFrames[i]));
-    }
+	// Copy frames from m_motion1 to m_motion3
+	// m_motion3[0, ..., startFrame] = m_motion1[0, ..., startFrame]
+	for (unsigned int i = 0; i < startFrame + 2; i++)
+	{
+		m_motion3.m_keyFrames[i]->Clone(*(m_motion1.m_keyFrames[i]));
+	}
 
-    // Estimate root translation and rotation for m_motion3[startFrame + interpFrame + 1]
-    // Estimate the speed of the roots during the start and end frames.
-    // Find the position and orientation of the end frame roots repectively.
-    // TODO: Start your code here...
+	// Estimate root translation and rotation for m_motion3[startFrame + interpFrame + 1]
+	// Estimate the speed of the roots during the start and end frames.
+	// Find the position and orientation of the end frame roots repectively.
+	// TODO: Start your code here...   
 
-    // m_motion3[startFrame + interpFrame + 1, ..., totalFrame] = m_motion2[endFrame, ..., frameCount] with proper root translation and rotation
-    // TODO: Start your code here...
+	vec3 dir1;
+	vec3 dir2;
 
-    // m_motion3[startFrame + 1, ..., startFrame + interpFrame] are computed from proper interpolations including
-    // root translation interpolation
-    // joint rotation interpolation using Cubic, SLERP and SQUAD
-    float fPerc;
-    Frame s0, s1;
-    s0.SetJointCount(m_motion3.m_jointCount);
-    s1.SetJointCount(m_motion3.m_jointCount);
-    Frame *pFrame;
-	int i, j;
-    for (i = startFrame + 1, j = 0; i < startFrame + interpFrame + 1; i++, j++)
-    {
-        fPerc = float(j + 1) / float(interpFrame + 1);
-        pFrame = m_motion3.GetFrameAt(i);
-        switch(type){
-        case eCUBIC:
-            // check the Frame class and the methods inside might be helpful.
-            // TODO: cubic interpolation
-            break;
-        case eSLERP:
-            // TODO: SLERP
-            break;
-        case eSQUAD:
-            // TODO: SQUAD
-            break;
-        }
-    }
+	dir1 = m_motion1.m_keyFrames[startFrame]->GetRootTranslation() - m_motion1.m_keyFrames[startFrame-1]->GetRootTranslation();
+	dir2 = m_motion2.m_keyFrames[endFrame+1]->GetRootTranslation() - m_motion2.m_keyFrames[endFrame]->GetRootTranslation();
+	vec3 translate = m_motion1.m_keyFrames[startFrame]->GetRootTranslation();
+
+	//make conditional judgement 
+	dir1.Normalize();
+	dir2.Normalize();
+
+	float seta = acos(dir1*dir2);
+	mat3 setaRot = mat3::Rotation3DRad(axisY, seta).Transpose();// Computing the factor to estimate translation and rotation																												// for motion3
+
+	Transform convert;
+	convert.m_rotation = setaRot*m_motion2.GetFrameAt(endFrame)->GetJointRotation(0);
+	convert.m_translation = convert.m_rotation*translate;
+	Transform t;
+	Transform tOld;
+	Transform tNew;
+	t.m_rotation = convert.m_rotation;
+	t.m_translation = convert.m_translation;
+	// m_motion3[startFrame + interpFrame + 1, ..., totalFrame] = m_motion2[endFrame, ..., frameCount] with proper root translation and rotation
+	// TODO: Start your code here...  
+
+	for (unsigned int i = startFrame + interpFrame + 1; i < totalFrame; i++)
+	{
+
+		m_motion3.m_keyFrames[i]->Clone(*(m_motion2.m_keyFrames[endFrame + i - startFrame- interpFrame -1]));
+
+		tOld.m_translation = m_motion2.m_keyFrames[endFrame + i - startFrame- interpFrame -1]->GetRootTranslation();
+		tOld.m_rotation = m_motion2.m_keyFrames[endFrame + i - startFrame- interpFrame -1]->GetJointRotation(0);
+
+		tNew = t * tOld;
+		m_motion3.m_keyFrames[i]->SetRootTranslation(vec3(tNew.m_translation[0], tOld.m_translation[1], tNew.m_translation[2])); // Restricting translation in y axis
+		m_motion3.m_keyFrames[i]->SetJointRotation(0, tNew.m_rotation);
+	}
+
+	// m_motion3[startFrame + 1, ..., startFrame + interpFrame] are computed from proper interpolations including
+	// root translation interpolation
+	// joint rotation interpolation using Cubic, SLERP and SQUAD
+	float fPerc;
+	Frame s0, s1;
+	s0.SetJointCount(m_motion3.m_jointCount);
+	s1.SetJointCount(m_motion3.m_jointCount);
+
+	Frame *pFrame;
+	int j = 0;
+	for (int i = startFrame + 1, j = 0; i < startFrame + interpFrame + 1; i++, j++)
+	{
+		fPerc = float(j + 1) / float(interpFrame + 1);
+		pFrame = m_motion3.GetFrameAt(i);
+		switch (type)
+		{
+		case eCUBIC:
+			// check the Frame class and the methods inside might be helpful.
+			// TODO: cubic interpolation
+			pFrame->Cubic(*m_motion3.GetFrameAt(startFrame - 1), *m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 1), *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
+			break;
+		case eSLERP:
+			// TODO: SLERP
+			pFrame->Slerp(*m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
+			break;
+		case eSQUAD:
+			pFrame->Squad(*m_motion3.GetFrameAt(startFrame), s0, s1, *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
+			// TODO: SQUAD
+			break;
+		}
+	}
 }
