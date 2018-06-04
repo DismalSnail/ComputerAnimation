@@ -64,7 +64,7 @@ void CSpark::EulerStep(float deltaT)
 /*
  *	ComputeForce() computes the forces applied to this spark
  *  In this fucntion, you need to set the correct value for state[6] and state[7], 
- *      which are forces along X and Y axis.
+ *  which are forces along X and Y axis.
  */
 void CSpark::ComputeForce(){
 //Add your code here
@@ -72,7 +72,7 @@ void CSpark::ComputeForce(){
 
 /*
  *	FindDeriv() computes the derivative of the state vector.
- *  Remeber to substract its life counts.
+ *  Remeber to subtract its life counts.
  */
 void CSpark::FindDeriv(){
 //Add your code here
@@ -87,6 +87,17 @@ void CSpark::FindDeriv(){
  */
 void CSpark::UpdateState(){
 //Add your code here	
+	if (state[7] <= 0.0f)
+	{
+		dead = true;
+		return;
+	}
+
+	if (state[1] <= 0.0f && state[3] < 0.0f)
+	{
+		state[3] *= -1.0f*COR;
+		state[2] *= 1.0f*COR;
+	}
 }
 
 

@@ -911,6 +911,26 @@ void Skeleton::SolveIK(void)
 					// Update rotation at pJoint
 					// Update FK from pJoint
 					// Add your code
+					vec3 r = (pJoint->GetGlobalRotation().Transpose())*(-pJoint->GetGlobalTranslation() + pEndEffector->GetGlobalTranslation());
+					dist = (pJoint->GetGlobalRotation().Transpose())*dist;
+
+					vec3 axis = r.Cross(dist);
+					axis = axis.Normalize();
+					if (axis.Length() <0.001)
+						continue;
+
+					float theta = 0.0;
+					float c = 0.1;
+
+					for (int i = 0; i< 10; ++i)
+					{
+						theta = (c*axis.Length() / (r.Length()*r.Length() + r * dist));
+						mat3 T = mat3::Rotation3DRad(axis, theta);
+
+						pJoint->SetLocalRotation(T*pJoint->GetLocalRotation());
+						UpdateFK(pJoint);
+					}
+
 
 					// Check error, if it is close enough, terminate the CCD iteration
 					dist = m_goalPosition - pEndEffector->GetGlobalTranslation();
@@ -1073,26 +1093,21 @@ void Player::Blend( const unsigned int& startFrame, const unsigned int& endFrame
 	Transform dur;
 	dur = start * convert.Inverse();																	
 
-	Transform t;
-	Transform tOld;
-	Transform tNew;
-	t.m_rotation = dur.m_rotation;
-	t.m_translation = dur.m_translation;
-
+	Transform Old;
+	Transform New;
 	// m_motion3[startFrame + interpFrame + 1, ..., totalFrame] = m_motion2[endFrame, ..., frameCount] with proper root translation and rotation
 	// TODO: Start your code here...  
-
 	for (unsigned int i = startFrame + interpFrame + 1; i < totalFrame; i++)
 	{
 
 		m_motion3.m_keyFrames[i]->Clone(*(m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]));
 
-		tOld.m_translation = m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]->GetRootTranslation();
-		tOld.m_rotation = m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]->GetJointRotation(0);
+		Old.m_translation = m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]->GetRootTranslation();
+		Old.m_rotation = m_motion2.m_keyFrames[endFrame + i - startFrame - interpFrame - 1]->GetJointRotation(0);
 
-		tNew = t * tOld;
-		m_motion3.m_keyFrames[i]->SetRootTranslation(vec3(tNew.m_translation[0], tOld.m_translation[1], tNew.m_translation[2])); // Restricting translation in y axis
-		m_motion3.m_keyFrames[i]->SetJointRotation(0, tNew.m_rotation);
+		New = dur * Old;
+		m_motion3.m_keyFrames[i]->SetRootTranslation(vec3(New.m_translation[0], Old.m_translation[1], New.m_translation[2])); // Restricting translation in y axis
+		m_motion3.m_keyFrames[i]->SetJointRotation(0, New.m_rotation);
 	}
 
 	// m_motion3[startFrame + 1, ..., startFrame + interpFrame] are computed from proper interpolations including
@@ -1114,16 +1129,23 @@ void Player::Blend( const unsigned int& startFrame, const unsigned int& endFrame
 		case eCUBIC:
 			// check the Frame class and the methods inside might be helpful.
 			// TODO: cubic interpolation
-			pFrame->Cubic(*m_motion3.GetFrameAt(startFrame - 1), *m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 1), *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
+			Frame::Cubic(*(m_motion3.m_keyFrames[startFrame - 1]), *(m_motion3.m_keyFrames[startFrame]),
+				*(m_motion3.m_keyFrames[startFrame + interpFrame + 1]), *(m_motion3.m_keyFrames[startFrame + interpFrame + 2]),
+				*(m_motion3.m_keyFrames[i]), fPerc);
 			break;
 		case eSLERP:
 			// TODO: SLERP
-			pFrame->Slerp(*m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
+			Frame::Slerp(*(m_motion3.m_keyFrames[startFrame]), *(m_motion3.m_keyFrames[startFrame + interpFrame + 1]),
+				*(m_motion3.m_keyFrames[i]), fPerc);
 			break;
 		case eSQUAD:
-			Frame::IntermediateFrame(*m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 1), s0);
-			Frame::IntermediateFrame(*m_motion3.GetFrameAt(startFrame), *m_motion3.GetFrameAt(startFrame + interpFrame + 1), *m_motion3.GetFrameAt(startFrame + interpFrame + 2), s1);
-			pFrame->Squad(*m_motion3.GetFrameAt(startFrame), s0, s1, *m_motion3.GetFrameAt(startFrame + interpFrame + 2), *pFrame, fPerc);
+			Frame::IntermediateFrame(*(m_motion3.m_keyFrames[startFrame - 1]), *(m_motion3.m_keyFrames[startFrame]),
+				*(m_motion3.m_keyFrames[startFrame + 1]), s0);
+			Frame::IntermediateFrame(*(m_motion3.m_keyFrames[startFrame + interpFrame]), *(m_motion3.m_keyFrames[startFrame + interpFrame + 1]),
+				*(m_motion3.m_keyFrames[startFrame + interpFrame + 2]), s1);
+			Frame::Squad(*(m_motion3.m_keyFrames[startFrame]), s0,
+				s1, *(m_motion3.m_keyFrames[startFrame + interpFrame + 1]),
+				*(m_motion3.m_keyFrames[i]), fPerc);
 			// TODO: SQUAD
 			break;
 		}

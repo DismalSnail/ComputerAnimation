@@ -93,5 +93,23 @@ void CRocket::FindDeriv()
  */
 void CRocket::UpdateState()
 {
-//Add your code here	
+//Add your code here
+	if (mode == EXPLOSION)
+	{
+		if (explode < TOTALEXPLOSION)
+		{
+			explode++;
+		}
+		else
+		{
+			mode = DEAD;
+			dead = true;
+		}
+		return;
+	}
+	if (state[5]<=0)
+	{
+		mode = EXPLOSION;
+		explode = 1;
+	}
 }

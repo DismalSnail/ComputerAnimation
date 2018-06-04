@@ -63,6 +63,19 @@ void CSimulation::FireRocket(float posx, float* color)
 {
 	float posy = 0.0f;
 //Add your code here
+	CRocket* newRocket = new CRocket(color);
+	float* value = new float[newRocket->dim];
+	value[0] =
+	value[1] =
+	value[2] =
+	value[3] =
+	value[4] =
+	value[5] =
+	value[6] =
+	value[7] =
+	value[8] = 
+	newRocket->SetInitialState(value);
+	rockets.push_back(newRocket);
 }
 
 /*
@@ -88,6 +101,29 @@ void CSimulation::FireRocket(float posx, float* color)
 void CSimulation::Explode(float posx, float posy, float RocketSpeed, float* color)
 {
 //Add your code here
+	float radius = 1.0f;
+	CSpark* newSpark;
+	float* value;
+	int randomInteger = rand();
+	int numSparks = (randomInteger % 51) + 10;
+	float angle = 360.0f / numSparks;
+	randomInteger = rand();
+	int randomVelocity = (randomInteger % 21) + 20;
+	for (int cnt = 0; cnt < numSparks; cnt++)
+	{
+		newSpark = new CSpark(color);
+		value = new float[newSpark->dim];
+		value[0] =
+		value[1] =
+		value[2] =
+		value[3] =
+		value[4] =
+		value[5] =
+		value[6] =
+		value[7] =
+		newSpark->SetInitialState(value);
+		sparks.push_back(newSpark);
+	}
 }
 
 /*
@@ -117,6 +153,20 @@ void CSimulation::EulerStep()
 	for (vector<CRocket*>::iterator rocketIter = rockets.begin(); rocketIter != rockets.end(); )
 	{
 	//Add your code here
+		rocket = *rocketIter;
+		if (rocket->dead)
+		{
+			rocketIter = rockets.erase(rocketIter);
+			delete rocket;
+		}
+		else
+		{
+			if (rocket->mode == EXPLOSION)
+			{
+				Explode(rocket->state[0], rocket->state[1], rocket->state[4], rocket->color);
+			}
+			rocketIter++;
+		}
 	}
 
 	//Step 3. Euler steps for valid sparks and rockets.
