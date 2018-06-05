@@ -65,15 +65,15 @@ void CSimulation::FireRocket(float posx, float* color)
 //Add your code here
 	CRocket* newRocket = new CRocket(color);
 	float* value = new float[newRocket->dim];
-	value[0] =
-	value[1] =
-	value[2] =
-	value[3] =
-	value[4] =
-	value[5] =
-	value[6] =
-	value[7] =
-	value[8] = 
+	value[0] = posx;
+	value[1] = posy;
+	value[2] = 0;
+	value[3] = 1;
+	value[4] = 62;
+	value[5] = 61;
+	value[6] =0.0f ;
+	value[7] =GRAVITY ;
+	value[8] = 1;
 	newRocket->SetInitialState(value);
 	rockets.push_back(newRocket);
 }
@@ -113,14 +113,14 @@ void CSimulation::Explode(float posx, float posy, float RocketSpeed, float* colo
 	{
 		newSpark = new CSpark(color);
 		value = new float[newSpark->dim];
-		value[0] =
-		value[1] =
-		value[2] =
-		value[3] =
-		value[4] =
-		value[5] =
-		value[6] =
-		value[7] =
+		//value[0] =
+		//value[1] =
+		//value[2] =
+		//value[3] =
+		//value[4] =
+		//value[5] =
+		//value[6] =
+		//value[7] =
 		newSpark->SetInitialState(value);
 		sparks.push_back(newSpark);
 	}

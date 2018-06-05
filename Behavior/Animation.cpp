@@ -907,31 +907,31 @@ void Skeleton::SolveIK(void)
 					// Compute the rotation axis and angle to minimize the error
 					// You need to handle the co-linear case to avoid invalid vec3 cross product
 					// Add your code here
+					vec3 curVector =  pEndEffector->GetGlobalTranslation() - pJoint->GetGlobalTranslation();
+					vec3 targetVector = m_goalPosition - pJoint->GetGlobalTranslation();
 
+					curVector.Normalize();
+					targetVector.Normalize();
+
+					bool co_linear = fabs(fabs(curVector * targetVector) - 1) < EPSILON * 10;
+					if (co_linear) continue;
+
+					vec3 axis = curVector.Cross(targetVector);
+					axis = (pJoint->GetGlobalRotation().Transpose())*axis;
 					// Update rotation at pJoint
 					// Update FK from pJoint
 					// Add your code
-					vec3 r = (pJoint->GetGlobalRotation().Transpose())*(-pJoint->GetGlobalTranslation() + pEndEffector->GetGlobalTranslation());
-					dist = (pJoint->GetGlobalRotation().Transpose())*dist;
-
-					vec3 axis = r.Cross(dist);
-					axis = axis.Normalize();
-					if (axis.Length() <0.001)
-						continue;
-
-					float theta = 0.0;
-					float c = 0.1;
-
-					for (int i = 0; i< 10; ++i)
+					float angle = 0.0;
+					mat3 T;
+					for (int j = 0; j< 10; ++j)
 					{
-						theta = (c*axis.Length() / (r.Length()*r.Length() + r * dist));
-						mat3 T = mat3::Rotation3DRad(axis, theta);
+						angle = 0.1*acos(curVector*targetVector);
+					    T = mat3::Rotation3DRad(axis, angle);
 
 						pJoint->SetLocalRotation(T*pJoint->GetLocalRotation());
 						UpdateFK(pJoint);
 					}
-
-
+					
 					// Check error, if it is close enough, terminate the CCD iteration
 					dist = m_goalPosition - pEndEffector->GetGlobalTranslation();
 					if (dist.Length() < EPSILONDIST)
