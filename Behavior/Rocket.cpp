@@ -81,6 +81,14 @@ void CRocket::ComputeForce()
 void CRocket::FindDeriv()
 {
 //Add your code here
+	deriv[0] = state[4];
+	deriv[1] = state[5];
+	deriv[2] = 0;
+	deriv[3] = 0;
+	deriv[4] = state[6] / state[8];
+	deriv[5] = state[7] / state[8];
+	deriv[6] = 0;
+	deriv[7] = 0;
 }
 
 /*
@@ -94,6 +102,18 @@ void CRocket::FindDeriv()
 void CRocket::UpdateState()
 {
 //Add your code here
+	state[0] += deriv[0] * deltaT;
+	state[1] += deriv[1] * deltaT;
+
+	state[2] = state[4];
+	state[3] = state[5];
+
+	state[4] += deriv[4] * deltaT;
+	state[5] += deriv[5] * deltaT;
+
+	state[6] += deriv[6] * deltaT;
+	state[7] += deriv[7] * deltaT;
+
 	if (mode == EXPLOSION)
 	{
 		if (explode < TOTALEXPLOSION)

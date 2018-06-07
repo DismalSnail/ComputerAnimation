@@ -1108,6 +1108,7 @@ void Player::Blend( const unsigned int& startFrame, const unsigned int& endFrame
 		New = dur * Old;
 		m_motion3.m_keyFrames[i]->SetRootTranslation(vec3(New.m_translation[0], Old.m_translation[1], New.m_translation[2])); // Restricting translation in y axis
 		m_motion3.m_keyFrames[i]->SetJointRotation(0, New.m_rotation);
+		Player::UpdateFrame();
 	}
 
 	// m_motion3[startFrame + 1, ..., startFrame + interpFrame] are computed from proper interpolations including

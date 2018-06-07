@@ -76,6 +76,11 @@ void CSpark::ComputeForce(){
  */
 void CSpark::FindDeriv(){
 //Add your code here
+	deriv[0] = state[2];
+	deriv[1] = state[3];
+	deriv[2] = state[4] / state[6];
+	deriv[3] = state[5] / state[6];
+	deriv[7] = -1;
 }
 
 /*
@@ -87,12 +92,19 @@ void CSpark::FindDeriv(){
  */
 void CSpark::UpdateState(){
 //Add your code here	
+	state[0] += deriv[0] * deltaT;
+	state[1] += deriv[1] * deltaT;
+
+	state[2] += deriv[2] * deltaT;
+	state[3] += deriv[3] * deltaT;
+
+	state[7] += deriv[7] * deltaT;
+
 	if (state[7] <= 0.0f)
 	{
 		dead = true;
 		return;
 	}
-
 	if (state[1] <= 0.0f && state[3] < 0.0f)
 	{
 		state[3] *= -1.0f*COR;

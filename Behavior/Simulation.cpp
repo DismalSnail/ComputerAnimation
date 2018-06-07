@@ -64,16 +64,18 @@ void CSimulation::FireRocket(float posx, float* color)
 	float posy = 0.0f;
 //Add your code here
 	CRocket* newRocket = new CRocket(color);
+	int seta = rand() % 91+45;
+	float setaRad = PI / 180 * seta;
 	float* value = new float[newRocket->dim];
 	value[0] = posx;
 	value[1] = posy;
-	value[2] = 0;
-	value[3] = 1;
-	value[4] = 62;
-	value[5] = 61;
+	value[2] = cos(setaRad);
+	value[3] = sin(setaRad);
+	value[4] = cos(setaRad)*(rand() % 61 + 60) / 1.41421356f;
+	value[5] = sin(setaRad)*(rand() % 61 + 60) / 1.41421356f;
 	value[6] =0.0f ;
-	value[7] =GRAVITY ;
-	value[8] = 1;
+	value[7] =-GRAVITY ;
+	value[8] = 1.0;
 	newRocket->SetInitialState(value);
 	rockets.push_back(newRocket);
 }
@@ -113,14 +115,14 @@ void CSimulation::Explode(float posx, float posy, float RocketSpeed, float* colo
 	{
 		newSpark = new CSpark(color);
 		value = new float[newSpark->dim];
-		//value[0] =
-		//value[1] =
-		//value[2] =
-		//value[3] =
-		//value[4] =
-		//value[5] =
-		//value[6] =
-		//value[7] =
+		value[0] = posx + radius * cos(angle*cnt*PI / 180.0f);
+		value[1] = posy + radius * sin(angle*cnt*PI / 180.0f);
+		value[2] = randomVelocity * cos(angle*cnt*PI / 180.0f);
+		value[3] = randomVelocity * sin(angle*cnt*PI / 180.0f);
+		value[4] = 0.0;
+		value[5] = -GRAVITY;
+		value[6] = 1.0;
+		value[7] = 20.0;
 		newSpark->SetInitialState(value);
 		sparks.push_back(newSpark);
 	}
